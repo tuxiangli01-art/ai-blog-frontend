@@ -18,16 +18,27 @@ jobs:
         
     - name: Deploy to server
       run: |
+        # Debug: Check current server content
+        echo "Current server content:"
+        ssh -o StrictHostKeyChecking=no root@120.26.135.60 "ls -la /var/www/html"
+        
         # Stop nginx temporarily
+        echo "Stopping nginx..."
         ssh -o StrictHostKeyChecking=no root@120.26.135.60 "systemctl stop nginx"
         
         # Clear existing content on server
+        echo "Clearing server content..."
         ssh -o StrictHostKeyChecking=no root@120.26.135.60 "rm -rf /var/www/html/*"
         
         # Copy files to server
+        echo "Copying files to server..."
         rsync -avz --exclude '.git' \
           -e "ssh -o StrictHostKeyChecking=no" \
           ./ root@120.26.135.60:/var/www/html/
+        
+        # Verify copied files
+        echo "Files copied to server:"
+        ssh -o StrictHostKeyChecking=no root@120.26.135.60 "ls -la /var/www/html"
         
         # Set proper permissions and restart nginx
         ssh -o StrictHostKeyChecking=no root@120.26.135.60 << 'ENDSSH'
@@ -35,8 +46,12 @@ jobs:
           chown -R www-data:www-data /var/www/html
           chmod -R 755 /var/www/html
           
+          # Check nginx configuration
+          nginx -t
+          
           # Start nginx
           systemctl start nginx
+          systemctl status nginx
           
           echo "Deployment completed successfully!"
 ENDSSH
