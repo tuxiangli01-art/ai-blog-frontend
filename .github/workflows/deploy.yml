@@ -18,21 +18,27 @@ jobs:
         
     - name: Deploy to server
       run: |
+        # Clear existing content on server
+        ssh -o StrictHostKeyChecking=no root@120.26.135.60 "rm -rf /var/www/html/*"
+        
         # Copy files to server
-        rsync -avz --delete \
-          --exclude '.git' \
+        rsync -avz --exclude '.git' \
           -e "ssh -o StrictHostKeyChecking=no" \
           ./ root@120.26.135.60:/var/www/html/
         
-        # Set proper permissions
+        # Set proper permissions and restart nginx
         ssh -o StrictHostKeyChecking=no root@120.26.135.60 << 'ENDSSH'
-          # Install nginx if not already installed
+          # Ensure nginx is installed and running
           apt-get update
           apt-get install -y nginx
           
           # Start and enable nginx
           systemctl start nginx
           systemctl enable nginx
+          
+          # Set proper ownership and permissions
+          chown -R www-data:www-data /var/www/html
+          chmod -R 755 /var/www/html
           
           # Restart nginx to serve the new files
           systemctl restart nginx
