@@ -18,6 +18,9 @@ jobs:
         
     - name: Deploy to server
       run: |
+        # Stop nginx temporarily
+        ssh -o StrictHostKeyChecking=no root@120.26.135.60 "systemctl stop nginx"
+        
         # Clear existing content on server
         ssh -o StrictHostKeyChecking=no root@120.26.135.60 "rm -rf /var/www/html/*"
         
@@ -28,20 +31,12 @@ jobs:
         
         # Set proper permissions and restart nginx
         ssh -o StrictHostKeyChecking=no root@120.26.135.60 << 'ENDSSH'
-          # Ensure nginx is installed and running
-          apt-get update
-          apt-get install -y nginx
-          
-          # Start and enable nginx
-          systemctl start nginx
-          systemctl enable nginx
-          
           # Set proper ownership and permissions
           chown -R www-data:www-data /var/www/html
           chmod -R 755 /var/www/html
           
-          # Restart nginx to serve the new files
-          systemctl restart nginx
+          # Start nginx
+          systemctl start nginx
           
           echo "Deployment completed successfully!"
 ENDSSH
